@@ -1,0 +1,12 @@
+.DS_Store
+node_modules
+*.zip
+
+# Build output
+dist/
+content-bundled.js
+*.map
+
+# Logs
+*.log
+npm-debug.log*

@@ -1,0 +1,17 @@
+{
+  "name": "gittimus",
+  "version": "0.0.1",
+  "description": "Version Control for Optimus",
+  "type": "module",
+  "scripts": {
+    "dev": "vite build --watch --mode development",
+    "build": "vite build",
+    "preview": "vite build && web-ext run --source-dir=dist"
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.3.0",
+    "@types/chrome": "^0.0.268",
+    "vite": "^5.0.0",
+    "vite-plugin-static-copy": "^1.0.0"
+  }
+}

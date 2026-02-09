@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Gittimus",
+  "version": "0.0.1",
+  "description": "Version Control for Optimus",
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "*://inshoppingcart.inone.useinsider.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["*://*/*"],
+      "js": ["content/index.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background/index.js"
+  }
+}
