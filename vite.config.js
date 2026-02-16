@@ -8,7 +8,7 @@ export default defineConfig({
     crx({ manifest }),
     viteStaticCopy({
       targets: [
-        { src: 'content.css', dest: '.' }
+        { src: 'icon.png', dest: '.' }
       ]
     })
   ],

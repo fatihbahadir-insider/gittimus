@@ -1,57 +1,6 @@
-// Gittimus - Network Request Interception
 import { isCustomRuleEndpoint } from '../utils/helpers.js';
 import { MESSAGES } from '../utils/constants.js';
 import { logger } from '../utils/logger.js';
-
-export function setupFetchInterception() {
-  const originalFetch = window.fetch;
-
-  window.fetch = async function(...args) {
-    const [url, options] = args;
-
-    let requestBody = null;
-    if (options?.body) {
-      try {
-        requestBody = JSON.parse(options.body);
-      } catch (e) {
-  
-      }
-    }
-
-    const response = await originalFetch.apply(this, args);
-
-    const clone = response.clone();
-
-    if (typeof url === 'string' && isCustomRuleEndpoint(url)) {
-      try {
-        const responseBody = await clone.json();
-
-        logger.log('Interceptor', 'API Intercepted:', {
-          endpoint: url,
-          method: options?.method || 'GET',
-          requestBody,
-          responseBody
-        });
-
-  
-        chrome.runtime.sendMessage({
-          type: MESSAGES.API_INTERCEPTED,
-          endpoint: url,
-          method: options?.method || 'GET',
-          requestBody,
-          responseBody,
-          timestamp: Date.now()
-        });
-      } catch (e) {
-        logger.error('Interceptor', 'Failed to parse response:', e);
-      }
-    }
-
-    return response;
-  };
-
-  logger.log('Interceptor', 'Fetch interception setup complete');
-}
 
 export function setupXHRInterception() {
   const XHR = XMLHttpRequest.prototype;

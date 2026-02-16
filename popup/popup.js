@@ -9,8 +9,7 @@ async function loadHistory() {
   try {
     const data = await chrome.storage.local.get([
       CONFIG.STORAGE_KEYS.RULES,
-      CONFIG.STORAGE_KEYS.CURRENT_TRACKING,
-      CONFIG.STORAGE_KEYS.TRACKING_STATE
+      CONFIG.STORAGE_KEYS.CURRENT_TRACKING
     ]);
 
     logger.log('Popup', 'Data loaded:', data);
@@ -21,12 +20,15 @@ async function loadHistory() {
     if (currentTracking && rules?.[currentTracking]) {
       const rule = rules[currentTracking];
       displayTrackingStatus(rule);
-      displayVersions(rule.versions || [], showVersionDetail);
+      const versions = (rule.versions || []).map(v => ({ ...v, ruleName: rule.name, ruleId: rule.id }));
+      displayVersions(versions, showVersionDetail);
     } else {
       displayTrackingStatus(null);
 
       const allRules = rules ? Object.values(rules) : [];
-      const allVersions = allRules.flatMap(rule => rule.versions || []);
+      const allVersions = allRules.flatMap(rule =>
+        (rule.versions || []).map(v => ({ ...v, ruleName: rule.name, ruleId: rule.id }))
+      );
 
       if (allVersions.length > 0) {
         displayVersions(allVersions, showVersionDetail);
@@ -55,6 +57,8 @@ function setupEventListeners() {
 
 document.addEventListener('DOMContentLoaded', () => {
   logger.log('Popup', 'DOM loaded, initializing...');
+
+  chrome.action.setBadgeText({ text: '' });
 
   setupEventListeners();
   loadHistory();

@@ -1,4 +1,4 @@
-import { formatTimestamp } from '../utils/helpers.js';
+import { formatTimestamp, decodeBase64, downloadRuleAsJS } from '../utils/helpers.js';
 import { logger } from '../utils/logger.js';
 
 export function displayEmptyState() {
@@ -51,10 +51,13 @@ const sorted = [...versions].sort((a, b) => b.timestamp - a.timestamp);
     const date = formatTimestamp(version.timestamp);
     const typeClass = `type-${version.type.toLowerCase()}`;
 
-    
+
   let preview = '';
-    if (version.content) {
-      preview = version.content.substring(0, 80).replace(/\n/g, ' ');
+    if (version.contentBase64) {
+      const decoded = decodeBase64(version.contentBase64);
+      if (decoded) {
+        preview = decoded.substring(0, 60).replace(/\n/g, ' ');
+      }
     }
 
     li.innerHTML = `
@@ -63,7 +66,16 @@ const sorted = [...versions].sort((a, b) => b.timestamp - a.timestamp);
         <span class="version-date">${date}</span>
       </div>
       ${preview ? `<div class="version-preview">${preview}...</div>` : ''}
+      <button class="download-btn">📥 Download JS</button>
     `;
+
+    const downloadBtn = li.querySelector('.download-btn');
+    downloadBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const ruleName = version.ruleName || `rule_${version.ruleId}`;
+      const content = decodeBase64(version.contentBase64) || '';
+      downloadRuleAsJS(ruleName, content);
+    });
 
     li.addEventListener('click', () => onVersionClick(version));
     listEl.appendChild(li);
@@ -73,18 +85,18 @@ const sorted = [...versions].sort((a, b) => b.timestamp - a.timestamp);
 }
 
 export function showVersionDetail(version) {
-  const content = version.content || 'No content';
-  const oldContent = version.oldContent ? `\n\n--- OLD VERSION ---\n${version.oldContent}` : '';
+  const content = decodeBase64(version.contentBase64) || 'No content';
+  const oldContent = version.oldContentBase64 ? `\n\n--- OLD VERSION ---\n${decodeBase64(version.oldContentBase64)}` : '';
 
-  const message = `Version: ${version.id}
+  const message = `Rule: ${version.ruleName || 'Unknown'}
+Version: ${version.id}
 Type: ${version.type}
 Timestamp: ${new Date(version.timestamp).toLocaleString()}
 
 --- CONTENT ---
 ${content}${oldContent}`;
 
-  
-navigator.clipboard.writeText(content).then(() => {
+  navigator.clipboard.writeText(content).then(() => {
     logger.log('Popup UI', 'Content copied to clipboard');
   });
 

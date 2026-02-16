@@ -3,7 +3,7 @@ import { logger } from '../utils/logger.js';
 
 
 export async function storeVersion(versionData) {
-  const { ruleId, ruleName, type, content, newContent, oldContent, contentBase64, timestamp } = versionData;
+  const { ruleId, ruleName, type, contentBase64, oldContentBase64, timestamp } = versionData;
 
   const result = await chrome.storage.local.get(CONFIG.STORAGE_KEYS.RULES);
   const rules = result[CONFIG.STORAGE_KEYS.RULES] || {};
@@ -23,9 +23,8 @@ export async function storeVersion(versionData) {
     id: `v${timestamp}`,
     timestamp,
     type,
-    content: type === CONFIG.VERSION_TYPES.CREATE ? content : newContent,
-    oldContent: type === CONFIG.VERSION_TYPES.UPDATE ? oldContent : null,
-    contentBase64
+    contentBase64,
+    oldContentBase64: type === CONFIG.VERSION_TYPES.UPDATE ? oldContentBase64 : null
   };
 
   rules[ruleId].versions.push(version);
@@ -58,8 +57,7 @@ export async function markAsDeleted(ruleId, timestamp) {
 export async function getVersionHistory() {
   const result = await chrome.storage.local.get([
     CONFIG.STORAGE_KEYS.RULES,
-    CONFIG.STORAGE_KEYS.CURRENT_TRACKING,
-    CONFIG.STORAGE_KEYS.TRACKING_STATE
+    CONFIG.STORAGE_KEYS.CURRENT_TRACKING
   ]);
   return result;
 }
@@ -68,12 +66,6 @@ export async function getRule(ruleId) {
   const result = await chrome.storage.local.get(CONFIG.STORAGE_KEYS.RULES);
   const rules = result[CONFIG.STORAGE_KEYS.RULES] || {};
   return rules[ruleId];
-}
-
-export async function updateTrackingState(state) {
-  await chrome.storage.local.set({
-    [CONFIG.STORAGE_KEYS.TRACKING_STATE]: state
-  });
 }
 
 export async function setCurrentTracking(ruleId) {

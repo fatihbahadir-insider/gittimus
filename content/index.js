@@ -1,69 +1,31 @@
-
-import { shouldActivate, getCurrentRuleInfo, observeCustomRulesButton, observeUrlChanges } from './detector.js';
-import { injectTrackButton, setTrackingState, removeBadge } from './ui.js';
-import { setupFetchInterception, setupXHRInterception } from './interceptor.js';
-import { MESSAGES, CONFIG } from '../utils/constants.js';
+import { MESSAGES } from '../utils/constants.js';
 import { logger } from '../utils/logger.js';
+
+const GITTIMUS_MSG_TYPE = '__GITTIMUS_XHR_INTERCEPTED__';
 
 logger.log('Content', 'Script loaded');
 
-function handleTrackClick() {
-  const ruleInfo = getCurrentRuleInfo();
-  if (!ruleInfo) {
-    logger.log('Content', 'No rule selected');
+window.addEventListener('message', (event) => {
+  if (event.source !== window || !event.data || event.data.type !== GITTIMUS_MSG_TYPE) {
     return;
   }
 
-  chrome.runtime.sendMessage({
-    type: MESSAGES.START_TRACKING,
-    ruleName: ruleInfo.name,
-    timestamp: Date.now()
-  });
+  const { endpoint, method, requestBody, responseBody, timestamp } = event.data.payload;
 
-  setTrackingState(true);
-  logger.log('Content', 'Started tracking:', ruleInfo.name);
-}
+  logger.log('Content', 'XHR Intercepted:', { endpoint, method, requestBody, responseBody });
 
-async function initialize() {
-  logger.log('Content', 'Initializing...');
-
-  const data = await chrome.storage.local.get([
-    CONFIG.STORAGE_KEYS.CURRENT_TRACKING,
-    CONFIG.STORAGE_KEYS.TRACKING_STATE
-  ]);
-
-  if (data[CONFIG.STORAGE_KEYS.CURRENT_TRACKING]) {
-    logger.log('Content', 'Resuming tracking for rule:', data[CONFIG.STORAGE_KEYS.CURRENT_TRACKING]);
+  try {
+    chrome.runtime.sendMessage({
+      type: MESSAGES.API_INTERCEPTED,
+      endpoint,
+      method,
+      requestBody,
+      responseBody,
+      timestamp
+    });
+  } catch (e) {
+    logger.error('Content', 'Extension context invalidated - please refresh the page');
   }
+});
 
-
-  observeCustomRulesButton((btn) => {
-    if (!document.getElementById('gittimus-track-btn')) {
-      injectTrackButton(btn, handleTrackClick);
-    }
-  });
-
-
-  setupFetchInterception();
-  setupXHRInterception();
-}
-
-function cleanup() {
-  removeBadge();
-  logger.log('Content', 'Cleaned up');
-}
-
-if (shouldActivate()) {
-  initialize();
-
-
-  observeUrlChanges((newUrl) => {
-    if (shouldActivate()) {
-      initialize();
-    } else {
-      cleanup();
-    }
-  });
-} else {
-  logger.log('Content', 'Not activating - URL does not match');
-}
+logger.log('Content', 'Interception bridge active');

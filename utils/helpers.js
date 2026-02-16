@@ -43,3 +43,19 @@ export function isCustomRuleEndpoint(url) {
          url.includes('custom/update') ||
          (url.includes('custom') && url.includes('delete'));
 }
+
+export function downloadRuleAsJS(ruleName, content) {
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+  const filename = `${ruleName.replace(/[^a-z0-9]/gi, '_')}_${timestamp}.js`;
+
+  const blob = new Blob([content], { type: 'application/javascript' });
+  const url = URL.createObjectURL(blob);
+
+  chrome.downloads.download({
+    url: url,
+    filename: filename,
+    saveAs: true
+  }, () => {
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+  });
+}
