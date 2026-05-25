@@ -1,9 +1,9 @@
 import { formatTimestamp, decodeBase64, downloadRuleAsJS } from '../utils/helpers.js';
 import { logger } from '../utils/logger.js';
 
-export function displayEmptyState() {
+export function displayEmptyState(message) {
   const listEl = document.getElementById('version-list');
-  listEl.innerHTML = '<li class="empty-state">No versions recorded yet.<br>Navigate to Insider custom rules and start tracking!</li>';
+  listEl.innerHTML = `<li class="empty-state">${message || 'No rules tracked yet.<br>Start working in Insider to sync rules!'}</li>`;
 }
 
 export function displayTrackingStatus(rule) {
@@ -16,7 +16,7 @@ export function displayTrackingStatus(rule) {
     statusText.textContent = 'Tracking active';
     ruleInfo.style.display = 'block';
     document.getElementById('rule-name').textContent = rule.name || 'Unknown';
-    document.getElementById('rule-id').textContent = rule.id;
+    document.getElementById('rule-id').textContent = rule.ruleId;
   } else {
     statusEl.classList.remove('active');
     statusText.textContent = 'Not tracking';
@@ -24,81 +24,39 @@ export function displayTrackingStatus(rule) {
   }
 }
 
-export function displayStorageUsage() {
-  chrome.storage.local.getBytesInUse(null, (bytes) => {
-    const kb = (bytes / 1024).toFixed(2);
-    document.getElementById('storage-usage').textContent = `${kb} KB used`;
-  });
-}
-
-export function displayVersions(versions, onVersionClick) {
+export function displayRules(rules, onDownload) {
   const listEl = document.getElementById('version-list');
 
-  if (!versions || versions.length === 0) {
+  if (!rules || rules.length === 0) {
     displayEmptyState();
     return;
   }
 
   listEl.innerHTML = '';
 
-  
-const sorted = [...versions].sort((a, b) => b.timestamp - a.timestamp);
-
-  sorted.forEach(version => {
+  rules.forEach(rule => {
     const li = document.createElement('li');
     li.className = 'version-item';
 
-    const date = formatTimestamp(version.timestamp);
-    const typeClass = `type-${version.type.toLowerCase()}`;
-
-
-  let preview = '';
-    if (version.contentBase64) {
-      const decoded = decodeBase64(version.contentBase64);
-      if (decoded) {
-        preview = decoded.substring(0, 60).replace(/\n/g, ' ');
-      }
-    }
+    const date = formatTimestamp(new Date(rule.updatedAt).getTime());
+    const count = rule.versionCount;
 
     li.innerHTML = `
       <div class="version-header">
-        <span class="version-type ${typeClass}">${version.type}</span>
+        <span class="version-type type-update">${count} version${count !== 1 ? 's' : ''}</span>
         <span class="version-date">${date}</span>
       </div>
-      ${preview ? `<div class="version-preview">${preview}...</div>` : ''}
-      <button class="download-btn">📥 Download JS</button>
+      <div class="version-preview">${rule.name || rule.ruleId}</div>
+      <button class="download-btn">📥 Download latest</button>
     `;
 
-    const downloadBtn = li.querySelector('.download-btn');
-    downloadBtn.addEventListener('click', (e) => {
+    li.querySelector('.download-btn').addEventListener('click', (e) => {
       e.stopPropagation();
-      const ruleName = version.ruleName || `rule_${version.ruleId}`;
-      const content = decodeBase64(version.contentBase64) || '';
-      downloadRuleAsJS(ruleName, content);
+      onDownload(rule);
     });
 
-    li.addEventListener('click', () => onVersionClick(version));
     listEl.appendChild(li);
   });
 
-  logger.log('Popup UI', 'Displayed', sorted.length, 'versions');
-}
-
-export function showVersionDetail(version) {
-  const content = decodeBase64(version.contentBase64) || 'No content';
-  const oldContent = version.oldContentBase64 ? `\n\n--- OLD VERSION ---\n${decodeBase64(version.oldContentBase64)}` : '';
-
-  const message = `Rule: ${version.ruleName || 'Unknown'}
-Version: ${version.id}
-Type: ${version.type}
-Timestamp: ${new Date(version.timestamp).toLocaleString()}
-
---- CONTENT ---
-${content}${oldContent}`;
-
-  navigator.clipboard.writeText(content).then(() => {
-    logger.log('Popup UI', 'Content copied to clipboard');
-  });
-
-  alert(`${message}\n\n✓ Content copied to clipboard!`);
+  logger.log('Popup UI', 'Displayed', rules.length, 'rules');
 }

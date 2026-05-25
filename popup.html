@@ -28,15 +28,6 @@
       font-size: 20px;
     }
 
-    #storage-usage {
-      font-size: 11px;
-      color: #999;
-      background: #fff;
-      padding: 4px 8px;
-      border-radius: 4px;
-      border: 1px solid #e0e0e0;
-    }
-
     .tracking-status {
       padding: 12px;
       background: #fff;
@@ -193,12 +184,6 @@
       font-size: 13px;
     }
 
-    .actions {
-      margin-top: 16px;
-      display: flex;
-      gap: 8px;
-    }
-
     button {
       padding: 10px 16px;
       border: none;
@@ -219,29 +204,73 @@
       transform: translateY(0);
     }
 
-    .btn-primary {
-      background: #4CAF50;
+    .auth-section {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      font-size: 12px;
+    }
+
+    .auth-section.logged-in {
+      background: #e8f5e9;
+      border-color: #a5d6a7;
+    }
+
+    .auth-user {
+      color: #333;
+      font-weight: 500;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 240px;
+    }
+
+    .btn-auth {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+
+    .btn-login {
+      background: #4285F4;
       color: white;
     }
 
-    .btn-primary:hover {
-      background: #45a049;
+    .btn-login:hover {
+      background: #3367D6;
+      transform: translateY(-1px);
     }
 
-    .btn-secondary {
-      background: #757575;
-      color: white;
+    .btn-logout {
+      background: #f5f5f5;
+      color: #666;
+      border: 1px solid #ddd;
     }
 
-    .btn-secondary:hover {
-      background: #616161;
+    .btn-logout:hover {
+      background: #eeeeee;
+      transform: translateY(-1px);
     }
   </style>
 </head>
 <body>
   <div class="header">
     <h2>Gittimus</h2>
-    <span id="storage-usage">Loading...</span>
+  </div>
+
+  <div id="auth-section" class="auth-section">
+    <span id="auth-user" class="auth-user">Not signed in</span>
+    <button id="auth-btn" class="btn-auth btn-login">Login with Google</button>
   </div>
 
   <div id="tracking-status" class="tracking-status">
@@ -251,15 +280,10 @@
     </div>
   </div>
 
-  <h3>Version History</h3>
+  <h3>Your Rules</h3>
   <ul id="version-list" class="version-list">
     <li class="empty-state">No versions recorded yet</li>
   </ul>
-
-  <div class="actions">
-    <button id="export-btn" class="btn-primary">Export JSON</button>
-    <button id="clear-btn" class="btn-secondary">Clear History</button>
-  </div>
 
   <script src="popup/popup.js" type="module"></script>
 </body>

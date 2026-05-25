@@ -1,57 +1,87 @@
-import { CONFIG } from '../utils/constants.js';
+import { MESSAGES } from '../utils/constants.js';
 import { logger } from '../utils/logger.js';
-import { displayTrackingStatus, displayStorageUsage, displayVersions, displayEmptyState, showVersionDetail } from './ui.js';
-import { exportToJSON, clearHistory } from './actions.js';
+import { displayTrackingStatus, displayRules, displayEmptyState } from './ui.js';
+import { listRules, getRuleHistory } from './api.js';
+import { decodeBase64, downloadRuleAsJS } from '../utils/helpers.js';
 
 logger.log('Popup', 'Loaded');
 
-async function loadHistory() {
+async function handleDownload(rule) {
   try {
-    const data = await chrome.storage.local.get([
-      CONFIG.STORAGE_KEYS.RULES,
-      CONFIG.STORAGE_KEYS.CURRENT_TRACKING
-    ]);
+    const history = await getRuleHistory(rule.ruleId);
+    if (!history || !history.history.length) {
+      alert('No versions found for this rule.');
+      return;
+    }
+    const latest = history.history[history.history.length - 1];
+    const content = decodeBase64(latest.contentBase64) || '';
+    downloadRuleAsJS(rule.name || rule.ruleId, content);
+  } catch (e) {
+    logger.error('Popup', 'Download failed:', e);
+  }
+}
 
-    logger.log('Popup', 'Data loaded:', data);
+async function loadRules() {
+  try {
+    const { isLoggedIn } = await chrome.runtime.sendMessage({ type: MESSAGES.GET_AUTH_STATUS });
 
-    const currentTracking = data[CONFIG.STORAGE_KEYS.CURRENT_TRACKING];
-    const rules = data[CONFIG.STORAGE_KEYS.RULES];
-
-    if (currentTracking && rules?.[currentTracking]) {
-      const rule = rules[currentTracking];
-      displayTrackingStatus(rule);
-      const versions = (rule.versions || []).map(v => ({ ...v, ruleName: rule.name, ruleId: rule.id }));
-      displayVersions(versions, showVersionDetail);
-    } else {
+    if (!isLoggedIn) {
       displayTrackingStatus(null);
-
-      const allRules = rules ? Object.values(rules) : [];
-      const allVersions = allRules.flatMap(rule =>
-        (rule.versions || []).map(v => ({ ...v, ruleName: rule.name, ruleId: rule.id }))
-      );
-
-      if (allVersions.length > 0) {
-        displayVersions(allVersions, showVersionDetail);
-      } else {
-        displayEmptyState();
-      }
+      displayEmptyState('Login with Google to start syncing your rules.');
+      return;
     }
 
-    displayStorageUsage();
+    const rules = await listRules();
+
+    if (!rules || rules.length === 0) {
+      displayTrackingStatus(null);
+      displayEmptyState();
+      return;
+    }
+
+    displayTrackingStatus(rules[0]);
+    displayRules(rules, handleDownload);
   } catch (error) {
-    logger.error('Popup', 'Error loading history:', error);
-    displayEmptyState();
+    logger.error('Popup', 'Error loading rules:', error);
+    displayEmptyState('Failed to load rules. Check your connection.');
+  }
+}
+
+async function loadAuthStatus() {
+  try {
+    const { isLoggedIn, user } = await chrome.runtime.sendMessage({ type: MESSAGES.GET_AUTH_STATUS });
+    const section = document.getElementById('auth-section');
+    const userEl = document.getElementById('auth-user');
+    const btn = document.getElementById('auth-btn');
+
+    if (isLoggedIn && user) {
+      section.classList.add('logged-in');
+      userEl.textContent = user.email || user.name || 'Signed in';
+      btn.textContent = 'Logout';
+      btn.className = 'btn-auth btn-logout';
+    } else {
+      section.classList.remove('logged-in');
+      userEl.textContent = 'Not signed in';
+      btn.textContent = 'Login with Google';
+      btn.className = 'btn-auth btn-login';
+    }
+  } catch (e) {
+    logger.error('Popup', 'Failed to load auth status:', e);
   }
 }
 
 function setupEventListeners() {
-  document.getElementById('export-btn').addEventListener('click', exportToJSON);
+  document.getElementById('auth-btn').addEventListener('click', async () => {
+    const { isLoggedIn } = await chrome.runtime.sendMessage({ type: MESSAGES.GET_AUTH_STATUS });
 
-  document.getElementById('clear-btn').addEventListener('click', async () => {
-    const cleared = await clearHistory();
-    if (cleared) {
-      loadHistory();
+    if (isLoggedIn) {
+      await chrome.runtime.sendMessage({ type: MESSAGES.LOGOUT });
+    } else {
+      chrome.runtime.sendMessage({ type: MESSAGES.LOGIN });
     }
+
+    await loadAuthStatus();
+    await loadRules();
   });
 }
 
@@ -61,7 +91,6 @@ document.addEventListener('DOMContentLoaded', () => {
   chrome.action.setBadgeText({ text: '' });
 
   setupEventListeners();
-  loadHistory();
-
-  setInterval(loadHistory, CONFIG.UI.REFRESH_INTERVAL);
+  loadAuthStatus();
+  loadRules();
 });

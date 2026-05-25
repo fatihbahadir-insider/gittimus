@@ -9,10 +9,12 @@
   "permissions": [
     "storage",
     "activeTab",
-    "downloads"
+    "downloads",
+    "tabs"
   ],
   "host_permissions": [
-    "*://inshoppingcart.inone.useinsider.com/*"
+    "*://inshoppingcart.inone.useinsider.com/*",
+    "http://localhost:3500/*"
   ],
   "content_scripts": [
     {

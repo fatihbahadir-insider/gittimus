@@ -1,10 +1,10 @@
 import { CONFIG } from '../utils/constants.js';
 import { extractRuleIdFromUrl } from '../utils/helpers.js';
 import { logger } from '../utils/logger.js';
-import { storeVersion, markAsDeleted, setCurrentTracking } from './storage.js';
+import { createRule, upsertRule, deleteRule } from './api.js';
 
 async function handleCreate(data) {
-  const { requestBody, responseBody, timestamp } = data;
+  const { requestBody, responseBody } = data;
 
   const ruleId = responseBody.id;
   const ruleName = requestBody.name;
@@ -17,25 +17,18 @@ async function handleCreate(data) {
 
   logger.log('Tracker', 'CREATE detected - Rule ID:', ruleId, 'Name:', ruleName);
 
-  await storeVersion({
-    ruleId,
-    ruleName,
-    type: CONFIG.VERSION_TYPES.CREATE,
-    contentBase64,
-    timestamp
-  });
-
-  await setCurrentTracking(ruleId);
-
-  logger.log('Tracker', 'CREATE stored');
-
-  showDownloadNotification(ruleName);
+  const result = await createRule(ruleId, ruleName, contentBase64);
+  if (result) {
+    logger.log('Tracker', 'CREATE synced to API');
+    showNotification(ruleName);
+  }
 }
 
 async function handleUpdate(data) {
-  const { requestBody, timestamp } = data;
+  const { requestBody } = data;
 
   const ruleId = requestBody.id;
+  const ruleName = requestBody.name;
   const contentBase64 = requestBody.contentCode;
 
   if (!contentBase64) {
@@ -45,36 +38,15 @@ async function handleUpdate(data) {
 
   logger.log('Tracker', 'UPDATE detected - Rule ID:', ruleId);
 
-  const storageData = await chrome.storage.local.get(CONFIG.STORAGE_KEYS.RULES);
-  const ruleExists = storageData[CONFIG.STORAGE_KEYS.RULES]?.[ruleId];
-
-  const oldContentBase64 = ruleExists?.versions?.slice(-1)[0]?.contentBase64;
-
-  if (contentBase64 === oldContentBase64) {
-    logger.log('Tracker', 'UPDATE ignored - content unchanged');
-    return;
+  const result = await upsertRule(ruleId, contentBase64, ruleName);
+  if (result) {
+    logger.log('Tracker', 'UPDATE synced to API');
+    showNotification(ruleName || `Rule ${ruleId}`);
   }
-
-  const ruleName = ruleExists?.name || requestBody.name || `Rule ${ruleId}`;
-
-  await storeVersion({
-    ruleId,
-    ruleName,
-    type: ruleExists ? CONFIG.VERSION_TYPES.UPDATE : CONFIG.VERSION_TYPES.CREATE,
-    oldContentBase64: ruleExists ? oldContentBase64 : null,
-    contentBase64,
-    timestamp
-  });
-
-  await setCurrentTracking(ruleId);
-
-  logger.log('Tracker', ruleExists ? 'UPDATE stored' : 'UPDATE auto-tracked as new rule');
-
-  showDownloadNotification(ruleName);
 }
 
 async function handleDelete(data) {
-  const { endpoint, timestamp } = data;
+  const { endpoint } = data;
 
   const ruleId = extractRuleIdFromUrl(endpoint);
   if (!ruleId) {
@@ -84,7 +56,8 @@ async function handleDelete(data) {
 
   logger.log('Tracker', 'DELETE detected - Rule ID:', ruleId);
 
-  await markAsDeleted(ruleId, timestamp);
+  await deleteRule(ruleId);
+  logger.log('Tracker', 'DELETE synced to API');
 }
 
 export async function processApiCall(data) {
@@ -103,10 +76,9 @@ export async function processApiCall(data) {
   }
 }
 
-function showDownloadNotification(ruleName) {
+function showNotification(ruleName) {
   chrome.action.setBadgeText({ text: '!' });
   chrome.action.setBadgeBackgroundColor({ color: '#4CAF50' });
-  chrome.action.setTitle({ title: `${ruleName} updated!` });
-
+  chrome.action.setTitle({ title: `${ruleName} synced!` });
   logger.log('Tracker', 'Badge set for:', ruleName);
 }

@@ -1,4 +1,6 @@
 export const CONFIG = {
+  API_BASE_URL: 'http://localhost:3500',
+
   ENDPOINTS: {
     CREATE: 'create-custom-rule',
     UPDATE: 'custom/update',
@@ -6,8 +8,8 @@ export const CONFIG = {
   },
 
   STORAGE_KEYS: {
-    RULES: 'rules',
-    CURRENT_TRACKING: 'currentTracking'
+    ACCESS_TOKEN: 'accessToken',
+    AUTH_USER: 'authUser'
   },
 
   UI: {
@@ -23,5 +25,7 @@ export const CONFIG = {
 
 export const MESSAGES = {
   API_INTERCEPTED: 'API_INTERCEPTED',
-  GET_HISTORY: 'GET_HISTORY'
+  LOGIN: 'LOGIN',
+  LOGOUT: 'LOGOUT',
+  GET_AUTH_STATUS: 'GET_AUTH_STATUS'
 };
