@@ -10,17 +10,20 @@ window.addEventListener('message', (event) => {
     return;
   }
 
-  const { endpoint, method, requestBody, responseBody, timestamp } = event.data.payload;
+  const { endpoint, method, requestBody, responseBody, origin, timestamp } = event.data.payload;
 
   logger.log('Content', 'XHR Intercepted:', { endpoint, method, requestBody, responseBody });
 
+  const isRuleGet = method === 'GET' && /rules\/custom\/\d+\/get/.test(endpoint);
+
   try {
     chrome.runtime.sendMessage({
-      type: MESSAGES.API_INTERCEPTED,
+      type: isRuleGet ? MESSAGES.RULE_LOADED : MESSAGES.API_INTERCEPTED,
       endpoint,
       method,
       requestBody,
       responseBody,
+      origin,
       timestamp
     });
   } catch (e) {

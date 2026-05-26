@@ -50,11 +50,11 @@ async function fetchAndStoreUser(token) {
 }
 
 export function initiateLogin() {
-  chrome.tabs.create({ url: `${CONFIG.API_BASE_URL}/auth/google` });
+  chrome.tabs.create({ url: `${CONFIG.API_BASE_URL}/auth/google?state=extension` });
 
   const onTabUpdated = (tabId, changeInfo, tab) => {
     if (changeInfo.status !== 'complete' || !tab.url) return;
-    if (!tab.url.includes('/auth/callback')) return;
+    if (!tab.url.startsWith(`${CONFIG.API_BASE_URL}/auth/callback`)) return;
 
     try {
       const url = new URL(tab.url);

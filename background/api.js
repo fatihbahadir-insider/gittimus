@@ -53,12 +53,10 @@ export async function upsertRule(ruleId, contentBase64, name) {
   const body = { contentBase64 };
   if (name) body.name = name;
   const result = await apiRequest('PUT', `/rules/${encodeURIComponent(ruleId)}`, body);
-  if (result.status === 404) {
-    logger.log('API', 'Rule not on server yet, creating:', ruleId);
-    return createRule(ruleId, name || ruleId, contentBase64);
-  }
+  if (result.status === 404) return { notFound: true };
   return result.ok ? result.data : null;
 }
+
 
 export async function deleteRule(ruleId) {
   logger.log('API', 'Deleting rule:', ruleId);

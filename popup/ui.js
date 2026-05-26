@@ -1,5 +1,6 @@
-import { formatTimestamp, decodeBase64, downloadRuleAsJS } from '../utils/helpers.js';
+import { formatTimestamp } from '../utils/helpers.js';
 import { logger } from '../utils/logger.js';
+import { CONFIG } from '../utils/constants.js';
 
 export function displayEmptyState(message) {
   const listEl = document.getElementById('version-list');
@@ -24,7 +25,7 @@ export function displayTrackingStatus(rule) {
   }
 }
 
-export function displayRules(rules, onDownload) {
+export function displayRules(rules) {
   const listEl = document.getElementById('version-list');
 
   if (!rules || rules.length === 0) {
@@ -47,12 +48,11 @@ export function displayRules(rules, onDownload) {
         <span class="version-date">${date}</span>
       </div>
       <div class="version-preview">${rule.name || rule.ruleId}</div>
-      <button class="download-btn">📥 Download latest</button>
     `;
 
-    li.querySelector('.download-btn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      onDownload(rule);
+    li.style.cursor = 'pointer';
+    li.addEventListener('click', () => {
+      chrome.tabs.create({ url: `${CONFIG.APP_BASE_URL}/rules/${rule.ruleId}` });
     });
 
     listEl.appendChild(li);

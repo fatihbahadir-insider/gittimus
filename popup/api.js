@@ -24,7 +24,3 @@ async function apiFetch(path) {
 export async function listRules() {
   return apiFetch('/rules');
 }
-
-export async function getRuleHistory(ruleId) {
-  return apiFetch(`/rules/${encodeURIComponent(ruleId)}/history`);
-}

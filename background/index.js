@@ -1,6 +1,6 @@
 import { MESSAGES } from '../utils/constants.js';
 import { logger } from '../utils/logger.js';
-import { processApiCall } from './tracker.js';
+import { processApiCall, handleRuleLoaded } from './tracker.js';
 import { initiateLogin, logout, getAuthStatus } from './auth.js';
 
 logger.log('Background', 'Service worker loaded');
@@ -11,6 +11,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   switch (message.type) {
     case MESSAGES.API_INTERCEPTED:
       processApiCall(message);
+      break;
+
+    case MESSAGES.RULE_LOADED:
+      handleRuleLoaded(message);
       break;
 
     case MESSAGES.LOGIN:

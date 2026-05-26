@@ -4,7 +4,8 @@
   function isCustomRuleEndpoint(url) {
     return url.includes('create-custom-rule') ||
            url.includes('custom/update') ||
-           (url.includes('custom') && url.includes('delete'));
+           (url.includes('custom') && url.includes('delete')) ||
+           /rules\/custom\/\d+\/get/.test(url);
   }
 
   function sendInterceptedData(endpoint, method, requestBody, responseBody) {
@@ -15,6 +16,7 @@
         method,
         requestBody,
         responseBody,
+        origin: window.location.origin,
         timestamp: Date.now()
       }
     }, '*');

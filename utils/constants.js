@@ -1,5 +1,6 @@
 export const CONFIG = {
   API_BASE_URL: 'http://localhost:3500',
+  APP_BASE_URL: 'http://localhost:3000',
 
   ENDPOINTS: {
     CREATE: 'create-custom-rule',
@@ -11,21 +12,12 @@ export const CONFIG = {
     ACCESS_TOKEN: 'accessToken',
     AUTH_USER: 'authUser'
   },
-
-  UI: {
-    REFRESH_INTERVAL: 2000
-  },
-
-  VERSION_TYPES: {
-    CREATE: 'CREATE',
-    UPDATE: 'UPDATE',
-    DELETE: 'DELETE'
-  }
 };
 
 export const MESSAGES = {
   API_INTERCEPTED: 'API_INTERCEPTED',
   LOGIN: 'LOGIN',
   LOGOUT: 'LOGOUT',
-  GET_AUTH_STATUS: 'GET_AUTH_STATUS'
+  GET_AUTH_STATUS: 'GET_AUTH_STATUS',
+  RULE_LOADED: 'RULE_LOADED'
 };

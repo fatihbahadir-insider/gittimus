@@ -3,17 +3,26 @@
   "name": "Gittimus",
   "version": "0.0.1",
   "description": "Version Control for Optimus",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
   "action": {
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
   },
   "permissions": [
     "storage",
     "activeTab",
-    "downloads",
     "tabs"
   ],
   "host_permissions": [
-    "*://inshoppingcart.inone.useinsider.com/*",
+    "*://*.useinsider.com/*",
     "http://localhost:3500/*"
   ],
   "content_scripts": [
